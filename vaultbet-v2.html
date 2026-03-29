@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VaultBet — Virtual Casino</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0e14; --bg2:#111620; --bg3:#1a2030; --border:#1e2940;
+    --accent:#00e5a0; --accent2:#00b8ff; --danger:#ff3d5a; --warn:#ffb800;
+    --text:#c8d4e8; --text2:#6a7a99; --gold:#ffd700;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden;}
+
+  .sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;}
+  .logo{padding:20px 20px 16px;font-size:1.6rem;font-weight:700;letter-spacing:2px;color:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+  .logo span{color:var(--accent);}
+  .logo-icon{width:32px;height:32px;background:var(--accent);border-radius:8px;display:grid;place-items:center;color:#000;font-size:1.1rem;font-weight:900;}
+  .nav{flex:1;padding:12px 0;overflow-y:auto;}
+  .nav-item{padding:11px 20px;cursor:pointer;display:flex;align-items:center;gap:12px;color:var(--text2);font-size:1rem;font-weight:600;letter-spacing:.5px;transition:all .2s;border-left:3px solid transparent;}
+  .nav-item:hover{background:var(--bg3);color:var(--text);}
+  .nav-item.active{background:rgba(0,229,160,.07);color:var(--accent);border-left-color:var(--accent);}
+  .nav-icon{font-size:1.1rem;width:22px;text-align:center;}
+  .sidebar-balance{margin:12px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;}
+  .sb-label{font-size:.75rem;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+  .sb-amount{font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--gold);}
+  .sb-coins{color:var(--text2);font-size:.8rem;margin-top:2px;}
+
+  .topbar{position:fixed;top:0;left:220px;right:0;height:60px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;z-index:99;}
+  .tb-title{font-size:1.2rem;font-weight:700;letter-spacing:1px;flex:1;}
+  .tb-badge{background:rgba(0,229,160,.12);color:var(--accent);border:1px solid rgba(0,229,160,.3);padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:600;letter-spacing:.5px;}
+  .tb-user{display:flex;align-items:center;gap:10px;}
+  .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-weight:700;color:#000;font-size:.9rem;cursor:pointer;}
+
+  .main{margin-left:220px;margin-top:60px;padding:24px;}
+  .page{display:none;}
+  .page.active{display:block;}
+
+  /* LOBBY */
+  .lobby-hero{background:linear-gradient(135deg,#0d1a2e,#0a1428,#0d1a2e);border:1px solid var(--border);border-radius:16px;padding:40px;margin-bottom:24px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;}
+  .lobby-hero::before{content:'';position:absolute;top:-50%;right:-10%;width:400px;height:400px;background:radial-gradient(circle,rgba(0,229,160,.08),transparent 70%);pointer-events:none;}
+  .hero-text h1{font-size:2.4rem;font-weight:700;letter-spacing:1px;margin-bottom:8px;}
+  .hero-text h1 span{color:var(--accent);}
+  .hero-text p{color:var(--text2);font-size:1.05rem;max-width:400px;line-height:1.5;}
+  .hero-balance{text-align:right;}
+  .hero-balance .label{font-size:.8rem;color:var(--text2);letter-spacing:1px;text-transform:uppercase;}
+  .hero-balance .amount{font-family:'JetBrains Mono',monospace;font-size:2.8rem;font-weight:700;color:var(--gold);line-height:1;}
+  .hero-balance .sub{color:var(--text2);font-size:.85rem;margin-top:4px;}
+  .refill-btn{margin-top:12px;padding:10px 22px;background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:8px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:.95rem;font-weight:600;letter-spacing:.5px;transition:all .2s;}
+  .refill-btn:hover{background:var(--accent);color:#000;}
+
+  .games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;margin-bottom:32px;}
+  .game-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px 20px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;text-align:center;}
+  .game-card:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,229,160,.1);}
+  .game-card .gc-icon{font-size:3rem;margin-bottom:12px;}
+  .game-card .gc-name{font-size:1.1rem;font-weight:700;letter-spacing:.5px;margin-bottom:4px;}
+  .game-card .gc-desc{font-size:.82rem;color:var(--text2);line-height:1.4;}
+  .game-card .gc-badge{position:absolute;top:12px;right:12px;font-size:.65rem;font-weight:700;letter-spacing:.5px;padding:3px 8px;border-radius:4px;text-transform:uppercase;}
+  .badge-hot{background:rgba(255,61,90,.15);color:var(--danger);border:1px solid rgba(255,61,90,.3);}
+  .badge-new{background:rgba(0,229,160,.12);color:var(--accent);border:1px solid rgba(0,229,160,.3);}
+
+  .section-title{font-size:1rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+  .stat-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;}
+  .stat-label{font-size:.75rem;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+  .stat-val{font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;}
+  .stat-val.green{color:var(--accent);} .stat-val.red{color:var(--danger);} .stat-val.gold{color:var(--gold);} .stat-val.blue{color:var(--accent2);}
+
+  .game-layout{display:grid;grid-template-columns:280px 1fr;gap:20px;}
+  .bet-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;}
+  .game-area{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+
+  .bet-label{font-size:.75rem;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;margin-top:14px;}
+  .bet-label:first-child{margin-top:0;}
+  .bet-input-wrap{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .bet-input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:600;padding:10px 12px;}
+  .bet-input-prefix{padding:10px 12px;color:var(--gold);font-weight:700;font-family:'JetBrains Mono',monospace;font-size:1rem;border-right:1px solid var(--border);}
+  .bet-quick{display:flex;gap:6px;margin-top:6px;}
+  .bet-quick button{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:5px 0;border-radius:6px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:600;transition:all .15s;}
+  .bet-quick button:hover{background:var(--border);color:var(--text);}
+
+  .play-btn{width:100%;margin-top:20px;padding:14px;border:none;border-radius:10px;font-family:'Rajdhani',sans-serif;font-size:1.15rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;}
+  .play-btn.green{background:var(--accent);color:#000;}
+  .play-btn.green:hover{background:#00ff98;box-shadow:0 4px 20px rgba(0,229,160,.4);}
+  .play-btn.red{background:var(--danger);color:#fff;}
+  .play-btn.red:hover{background:#ff5570;box-shadow:0 4px 20px rgba(255,61,90,.4);}
+  .play-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  .result-display{text-align:center;padding:20px 0;font-family:'JetBrains Mono',monospace;font-size:4rem;font-weight:700;transition:all .3s;}
+  .result-display.win{color:var(--accent);text-shadow:0 0 30px rgba(0,229,160,.6);}
+  .result-display.lose{color:var(--danger);text-shadow:0 0 30px rgba(255,61,90,.4);}
+  .result-display.neutral{color:var(--text2);}
+
+  /* LIMBO */
+  .limbo-track{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin:20px 0;position:relative;}
+  .limbo-fill{height:100%;width:0%;border-radius:4px;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .6s cubic-bezier(.4,0,.2,1);}
+  .multiplier-row{display:flex;justify-content:space-between;font-size:.8rem;color:var(--text2);font-family:'JetBrains Mono',monospace;}
+  .history-row{display:flex;gap:6px;flex-wrap:wrap;padding:16px;border-top:1px solid var(--border);}
+  .hist-chip{padding:4px 10px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:700;}
+  .hist-win{background:rgba(0,229,160,.12);color:var(--accent);border:1px solid rgba(0,229,160,.2);}
+  .hist-lose{background:rgba(255,61,90,.1);color:var(--danger);border:1px solid rgba(255,61,90,.2);}
+
+  /* CRASH */
+  .crash-canvas-wrap{position:relative;height:340px;overflow:hidden;}
+  #crashCanvas{display:block;width:100%;height:100%;}
+  .crash-multiplier{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'JetBrains Mono',monospace;font-size:3.5rem;font-weight:700;color:#fff;text-shadow:0 0 40px rgba(0,229,160,.5);pointer-events:none;transition:color .1s;}
+  .crash-multiplier.crashed{color:var(--danger);text-shadow:0 0 40px rgba(255,61,90,.6);}
+  .crash-status{position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);border:1px solid var(--border);padding:6px 18px;border-radius:20px;font-size:.9rem;font-weight:600;letter-spacing:.5px;backdrop-filter:blur(6px);}
+
+  /* DICE */
+  .dice-slider{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;outline:none;cursor:pointer;background:linear-gradient(to right,var(--accent) 0%,var(--accent) var(--val,50%),var(--bg3) var(--val,50%),var(--bg3) 100%);}
+  .dice-slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid var(--accent);cursor:pointer;box-shadow:0 0 10px rgba(0,229,160,.4);}
+  .dice-info{display:flex;justify-content:space-between;margin-top:10px;}
+  .dice-stat{text-align:center;}
+  .dice-stat .ds-val{font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--accent);}
+  .dice-stat .ds-label{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+  .dice-result-num{font-family:'JetBrains Mono',monospace;font-size:5rem;font-weight:700;text-align:center;color:var(--accent2);margin:10px 0;transition:all .3s;}
+
+  /* MINES */
+  .mines-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:20px;}
+  .mine-cell{aspect-ratio:1;border-radius:8px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;display:grid;place-items:center;font-size:1.5rem;transition:all .2s;position:relative;overflow:hidden;}
+  .mine-cell:hover:not(.revealed){background:var(--bg);border-color:var(--accent);transform:scale(1.05);}
+  .mine-cell.gem{background:rgba(0,229,160,.12);border-color:var(--accent);animation:gemPop .3s;}
+  .mine-cell.bomb{background:rgba(255,61,90,.12);border-color:var(--danger);animation:bombShake .4s;}
+  .mine-cell.revealed{cursor:default;}
+  @keyframes gemPop{0%{transform:scale(.8)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+  @keyframes bombShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}
+  .mines-multiplier{text-align:center;padding:10px 0;font-family:'JetBrains Mono',monospace;font-size:1.8rem;font-weight:700;color:var(--accent);}
+
+  /* COIN FLIP */
+  .coin-wrap{display:flex;justify-content:center;align-items:center;padding:40px 20px;min-height:260px;}
+  .coin{width:140px;height:140px;position:relative;transform-style:preserve-3d;transition:transform 1.2s cubic-bezier(.4,0,.2,1);}
+  .coin.flip-heads{transform:rotateY(1800deg);}
+  .coin.flip-tails{transform:rotateY(1980deg);}
+  .coin-face{position:absolute;width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3.5rem;backface-visibility:hidden;font-weight:900;}
+  .coin-heads{background:radial-gradient(circle at 35% 35%,#ffe066,var(--gold),#b8860b);box-shadow:0 0 30px rgba(255,215,0,.4);transform:rotateY(0deg);}
+  .coin-tails{background:radial-gradient(circle at 35% 35%,#c0c0c0,#808080,#404040);box-shadow:0 0 30px rgba(128,128,128,.4);transform:rotateY(180deg);}
+  .coin-choose{display:flex;gap:16px;justify-content:center;padding:0 20px 20px;}
+  .coin-btn{flex:1;padding:16px;border:2px solid var(--border);background:var(--bg3);border-radius:12px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;letter-spacing:.5px;color:var(--text2);transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .coin-btn span{font-size:2rem;}
+  .coin-btn.selected{border-color:var(--accent);background:rgba(0,229,160,.08);color:var(--accent);}
+  .coin-btn:hover{border-color:var(--accent2);color:var(--text);}
+  .coin-result-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.4rem;font-weight:700;padding:10px;min-height:50px;}
+  .coin-result-label.win{color:var(--accent);}
+  .coin-result-label.lose{color:var(--danger);}
+
+  /* KENO */
+  .keno-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;padding:16px;}
+  .keno-num{aspect-ratio:1;border-radius:8px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;display:grid;place-items:center;font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:700;transition:all .15s;color:var(--text2);}
+  .keno-num:hover:not(.drawn){background:var(--bg);border-color:var(--accent2);color:var(--text);}
+  .keno-num.selected{background:rgba(0,184,255,.15);border-color:var(--accent2);color:var(--accent2);}
+  .keno-num.hit{background:rgba(0,229,160,.2);border-color:var(--accent);color:var(--accent);animation:kenoPop .35s;box-shadow:0 0 12px rgba(0,229,160,.3);}
+  .keno-num.miss{background:rgba(255,61,90,.08);border-color:rgba(255,61,90,.3);color:var(--danger);}
+  .keno-num.drawn-only{background:rgba(255,184,0,.1);border-color:var(--warn);color:var(--warn);}
+  @keyframes kenoPop{0%{transform:scale(.7)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+  .keno-info{display:flex;justify-content:space-between;padding:0 16px 12px;font-size:.85rem;color:var(--text2);}
+  .keno-info span{font-family:'JetBrains Mono',monospace;}
+  .keno-info b{color:var(--accent);}
+  .keno-payout-table{padding:0 16px 16px;}
+  .kpt-title{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+  .kpt-row{display:flex;justify-content:space-between;font-size:.82rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03);font-family:'JetBrains Mono',monospace;}
+  .kpt-row .kpt-match{color:var(--text2);}
+  .kpt-row .kpt-multi{color:var(--accent);}
+  .keno-result-bar{padding:12px 16px;background:var(--bg3);border-top:1px solid var(--border);font-size:.9rem;font-weight:600;min-height:44px;}
+
+  /* MODE TABS */
+  .mode-tabs{display:flex;gap:8px;margin-bottom:16px;}
+  .mode-tab{flex:1;padding:9px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.95rem;color:var(--text2);transition:all .2s;}
+  .mode-tab.active{background:rgba(0,229,160,.1);color:var(--accent);border-color:rgba(0,229,160,.3);}
+
+  /* TOAST */
+  .toast-wrap{position:fixed;top:80px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+  .toast{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:.9rem;font-weight:600;letter-spacing:.3px;animation:toastIn .3s ease,toastOut .3s ease 2.5s forwards;display:flex;align-items:center;gap:10px;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+  .toast.win{border-color:rgba(0,229,160,.4);color:var(--accent);}
+  .toast.lose{border-color:rgba(255,61,90,.4);color:var(--danger);}
+  .toast.info{border-color:rgba(0,184,255,.3);color:var(--accent2);}
+  @keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateX(30px)}}
+
+  .live-table{width:100%;border-collapse:collapse;font-size:.88rem;}
+  .live-table th{text-align:left;padding:8px 12px;color:var(--text2);font-weight:600;border-bottom:1px solid var(--border);letter-spacing:.5px;font-size:.75rem;text-transform:uppercase;}
+  .live-table td{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.03);}
+  .live-table tr:hover td{background:rgba(255,255,255,.02);}
+  .lt-win{color:var(--accent);font-family:'JetBrains Mono',monospace;font-weight:700;}
+  .lt-lose{color:var(--danger);font-family:'JetBrains Mono',monospace;}
+  .lt-multi{font-family:'JetBrains Mono',monospace;color:var(--accent2);}
+  .lt-user{display:flex;align-items:center;gap:8px;}
+  .lt-avatar{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:.7rem;font-weight:700;color:#000;flex-shrink:0;}
+
+  @media(max-width:900px){
+    .sidebar{display:none;}
+    .topbar,.main{left:0;margin-left:0;}
+    .game-layout{grid-template-columns:1fr;}
+    .stats-row{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="logo"><div class="logo-icon">V</div>VAULT<span>BET</span></div>
+  <div class="nav">
+    <div class="nav-item active" onclick="showPage('lobby')"><span class="nav-icon">🏠</span><span>Lobby</span></div>
+    <div class="nav-item" onclick="showPage('limbo')"><span class="nav-icon">🚀</span><span>Limbo</span></div>
+    <div class="nav-item" onclick="showPage('crash')"><span class="nav-icon">📈</span><span>Crash</span></div>
+    <div class="nav-item" onclick="showPage('dice')"><span class="nav-icon">🎲</span><span>Dice</span></div>
+    <div class="nav-item" onclick="showPage('mines')"><span class="nav-icon">💎</span><span>Mines</span></div>
+    <div class="nav-item" onclick="showPage('coinflip')"><span class="nav-icon">🪙</span><span>Coin Flip</span></div>
+    <div class="nav-item" onclick="showPage('keno')"><span class="nav-icon">🎱</span><span>Keno</span></div>
+  </div>
+  <div class="sidebar-balance">
+    <div class="sb-label">Balance</div>
+    <div class="sb-amount" id="sidebarBal">$10,000.00</div>
+    <div class="sb-coins">Virtual Coins</div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-title" id="topbarTitle">Lobby</div>
+  <div class="tb-badge">DEMO MODE</div>
+  <div style="flex:1"></div>
+  <div class="tb-user">
+    <div style="font-size:.9rem;color:var(--text2);font-family:'JetBrains Mono',monospace" id="topBal">$10,000.00</div>
+    <div class="avatar">P</div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<div class="main">
+
+  <!-- LOBBY -->
+  <div class="page active" id="page-lobby">
+    <div class="lobby-hero">
+      <div class="hero-text">
+        <h1>Welcome to <span>VaultBet</span></h1>
+        <p>Play all your favourite provably fair games with virtual coins. No real money — just pure fun.</p>
+      </div>
+      <div class="hero-balance">
+        <div class="label">YOUR BALANCE</div>
+        <div class="amount" id="heroBalance">$10,000.00</div>
+        <div class="sub">Virtual Coins</div>
+        <button class="refill-btn" onclick="refillBalance()">+ Refill $10,000</button>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-label">Total Wagered</div><div class="stat-val gold" id="statWagered">$0.00</div></div>
+      <div class="stat-box"><div class="stat-label">Total Won</div><div class="stat-val green" id="statWon">$0.00</div></div>
+      <div class="stat-box"><div class="stat-label">Total Lost</div><div class="stat-val red" id="statLost">$0.00</div></div>
+      <div class="stat-box"><div class="stat-label">Net P&L</div><div class="stat-val blue" id="statPnl">$0.00</div></div>
+    </div>
+    <div class="section-title">Games</div>
+    <div class="games-grid">
+      <div class="game-card" onclick="showPage('limbo')"><span class="gc-badge badge-hot">HOT</span><div class="gc-icon">🚀</div><div class="gc-name">Limbo</div><div class="gc-desc">Set your target multiplier</div></div>
+      <div class="game-card" onclick="showPage('crash')"><span class="gc-badge badge-hot">HOT</span><div class="gc-icon">📈</div><div class="gc-name">Crash</div><div class="gc-desc">Cash out before the crash</div></div>
+      <div class="game-card" onclick="showPage('dice')"><div class="gc-icon">🎲</div><div class="gc-name">Dice</div><div class="gc-desc">Roll over or under target</div></div>
+      <div class="game-card" onclick="showPage('mines')"><span class="gc-badge badge-new">NEW</span><div class="gc-icon">💎</div><div class="gc-name">Mines</div><div class="gc-desc">Avoid bombs, collect gems</div></div>
+      <div class="game-card" onclick="showPage('coinflip')"><span class="gc-badge badge-new">NEW</span><div class="gc-icon">🪙</div><div class="gc-name">Coin Flip</div><div class="gc-desc">Heads or tails? 50/50 glory</div></div>
+      <div class="game-card" onclick="showPage('keno')"><span class="gc-badge badge-new">NEW</span><div class="gc-icon">🎱</div><div class="gc-name">Keno</div><div class="gc-desc">Pick your numbers & win big</div></div>
+    </div>
+    <div class="section-title">Recent Bets</div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+      <table class="live-table">
+        <thead><tr><th>Game</th><th>Player</th><th>Bet</th><th>Multiplier</th><th>Profit</th></tr></thead>
+        <tbody id="lobbyBets"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- LIMBO -->
+  <div class="page" id="page-limbo">
+    <div class="game-layout">
+      <div class="bet-panel">
+        <div class="bet-label">Bet Amount</div>
+        <div class="bet-input-wrap"><span class="bet-input-prefix">$</span><input class="bet-input" id="limboBet" type="number" value="10" min="1" step="1"></div>
+        <div class="bet-quick"><button onclick="halfBet('limboBet')">½</button><button onclick="doubleBet('limboBet')">2×</button><button onclick="maxBet('limboBet')">Max</button></div>
+        <div class="bet-label">Target Multiplier</div>
+        <div class="bet-input-wrap"><input class="bet-input" id="limboTarget" type="number" value="2.00" min="1.01" step="0.1" style="padding-left:16px"><span style="padding:10px 12px;color:var(--text2);font-weight:600">×</span></div>
+        <div style="margin-top:8px;font-size:.8rem;color:var(--text2);">Win chance: <span id="limboChance" style="color:var(--accent2)">50.00%</span> &nbsp;|&nbsp; Payout: <span id="limboPayout" style="color:var(--accent)">$19.80</span></div>
+        <button class="play-btn green" id="limboBtn" onclick="playLimbo()">BET</button>
+      </div>
+      <div class="game-area">
+        <div style="padding:20px">
+          <div class="result-display neutral" id="limboResult">—</div>
+          <div class="limbo-track"><div class="limbo-fill" id="limboFill"></div></div>
+          <div class="multiplier-row"><span>1×</span><span id="limboTargetLabel">Target: 2.00×</span><span>100×</span></div>
+        </div>
+        <div class="history-row" id="limboHistory"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CRASH -->
+  <div class="page" id="page-crash">
+    <div class="game-layout">
+      <div class="bet-panel">
+        <div class="bet-label">Bet Amount</div>
+        <div class="bet-input-wrap"><span class="bet-input-prefix">$</span><input class="bet-input" id="crashBet" type="number" value="10" min="1" step="1"></div>
+        <div class="bet-quick"><button onclick="halfBet('crashBet')">½</button><button onclick="doubleBet('crashBet')">2×</button><button onclick="maxBet('crashBet')">Max</button></div>
+        <div class="bet-label">Auto Cash Out (0 = manual)</div>
+        <div class="bet-input-wrap"><input class="bet-input" id="crashAuto" type="number" value="2.00" min="0" step="0.1" style="padding-left:16px"><span style="padding:10px 12px;color:var(--text2);font-weight:600">×</span></div>
+        <button class="play-btn green" id="crashBetBtn" onclick="placeCrashBet()">BET</button>
+        <button class="play-btn red" id="crashCashBtn" onclick="cashOutCrash()" style="display:none;margin-top:8px;">CASH OUT</button>
+        <div style="margin-top:14px;padding:12px;background:var(--bg3);border-radius:8px;font-size:.85rem;color:var(--text2);line-height:1.6;"><div id="crashBetInfo">Place a bet to join next round</div></div>
+      </div>
+      <div class="game-area">
+        <div class="crash-canvas-wrap"><canvas id="crashCanvas"></canvas><div class="crash-multiplier" id="crashMultiplier">1.00×</div><div class="crash-status" id="crashStatus">Waiting…</div></div>
+        <div class="history-row" id="crashHistory"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DICE -->
+  <div class="page" id="page-dice">
+    <div class="game-layout">
+      <div class="bet-panel">
+        <div class="mode-tabs">
+          <div class="mode-tab active" id="diceOverTab" onclick="setDiceMode('over')">Roll Over</div>
+          <div class="mode-tab" id="diceUnderTab" onclick="setDiceMode('under')">Roll Under</div>
+        </div>
+        <div class="bet-label">Bet Amount</div>
+        <div class="bet-input-wrap"><span class="bet-input-prefix">$</span><input class="bet-input" id="diceBet" type="number" value="10" min="1" step="1"></div>
+        <div class="bet-quick"><button onclick="halfBet('diceBet')">½</button><button onclick="doubleBet('diceBet')">2×</button><button onclick="maxBet('diceBet')">Max</button></div>
+        <div class="bet-label">Target Number</div>
+        <div class="bet-input-wrap"><input class="bet-input" id="diceTarget" type="number" value="50" min="1" max="99" style="padding-left:16px"></div>
+        <div style="margin-top:8px;font-size:.8rem;color:var(--text2);">Win chance: <span id="diceChance" style="color:var(--accent2)">50.00%</span> &nbsp;|&nbsp; Payout: <span id="dicePayout" style="color:var(--accent)">$19.80</span></div>
+        <button class="play-btn green" onclick="playDice()">ROLL</button>
+      </div>
+      <div class="game-area">
+        <div style="padding:30px 20px">
+          <div class="dice-result-num" id="diceResult">—</div>
+          <div style="margin:30px 0"><input type="range" class="dice-slider" id="diceSlider" min="1" max="99" value="50" oninput="updateDiceSlider()" style="--val:50%"></div>
+          <div class="dice-info">
+            <div class="dice-stat"><div class="ds-val" id="diceStatChance">50%</div><div class="ds-label">Win Chance</div></div>
+            <div class="dice-stat"><div class="ds-val" id="diceStatTarget">50</div><div class="ds-label">Target</div></div>
+            <div class="dice-stat"><div class="ds-val" id="diceStatMulti">1.98×</div><div class="ds-label">Multiplier</div></div>
+          </div>
+        </div>
+        <div class="history-row" id="diceHistory"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MINES -->
+  <div class="page" id="page-mines">
+    <div class="game-layout">
+      <div class="bet-panel">
+        <div class="bet-label">Bet Amount</div>
+        <div class="bet-input-wrap"><span class="bet-input-prefix">$</span><input class="bet-input" id="minesBet" type="number" value="10" min="1" step="1"></div>
+        <div class="bet-quick"><button onclick="halfBet('minesBet')">½</button><button onclick="doubleBet('minesBet')">2×</button><button onclick="maxBet('minesBet')">Max</button></div>
+        <div class="bet-label">Number of Mines</div>
+        <div class="bet-input-wrap"><input class="bet-input" id="minesCount" type="number" value="5" min="1" max="24" style="padding-left:16px"></div>
+        <button class="play-btn green" id="minesStartBtn" onclick="startMines()">START GAME</button>
+        <button class="play-btn red" id="minesCashBtn" onclick="cashOutMines()" style="display:none;margin-top:8px;">CASH OUT</button>
+        <div style="margin-top:14px;padding:12px;background:var(--bg3);border-radius:8px;">
+          <div style="font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Current Multiplier</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--accent);" id="minesCurrentMulti">1.00×</div>
+          <div style="font-size:.8rem;color:var(--text2);margin-top:4px;">Gems found: <span id="minesGems" style="color:var(--accent)">0</span></div>
+        </div>
+      </div>
+      <div class="game-area">
+        <div class="mines-multiplier" id="minesResultMsg">Place a bet to start</div>
+        <div class="mines-grid" id="minesGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COIN FLIP -->
+  <div class="page" id="page-coinflip">
+    <div class="game-layout">
+      <div class="bet-panel">
+        <div class="bet-label">Bet Amount</div>
+        <div class="bet-input-wrap"><span class="bet-input-prefix">$</span><input class="bet-input" id="coinBet" type="number" value="10" min="1" step="1"></div>
+        <div class="bet-quick"><button onclick="halfBet('coinBet')">½</button><button onclick="doubleBet('coinBet')">2×</button><button onclick="maxBet('coinBet')">Max</button></div>
+        <div class="bet-label">Choose Side</div>
+        <div class="coin-choose" style="padding:0;gap:16px;margin-top:0;">
+          <div class="coin-btn selected" id="coinHeadsBtn" onclick="selectCoin('heads')"><span>🌟</span>Heads</div>
+          <div class="coin-btn" id="coinTailsBtn" onclick="selectCoin('tails')"><span>🔘</span>Tails</div>
+        </div>
+        <div style="margin-top:12px;font-size:.8rem;color:var(--text2);">Win chance: <span style="color:var(--accent2)">49.50%</span> &nbsp;|&nbsp; Payout: <span style="color:var(--accent)" id="coinPayout">$19.80</span></div>
+        <button class="play-btn green" id="coinBtn" onclick="playCoinFlip()">FLIP COIN</button>
+      </div>
+      <div class="game-area">
+        <div class="coin-wrap">
+          <div class="coin" id="coinEl">
+            <div class="coin-face coin-heads">🌟</div>
+            <div class="coin-face coin-tails">🔘</div>
+          </div>
+        </div>
+        <div class="coin-result-label" id="coinResultLabel">Pick heads or tails and flip!</div>
+        <div class="history-row" id="coinHistory"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KENO -->
+  <div class="page" id="page-keno">
+    <div class="game-layout">
+      <div class="bet-panel">
+        <div class="bet-label">Bet Amount</div>
+        <div class="bet-input-wrap"><span class="bet-input-prefix">$</span><input class="bet-input" id="kenoBet" type="number" value="10" min="1" step="1"></div>
+        <div class="bet-quick"><button onclick="halfBet('kenoBet')">½</button><button onclick="doubleBet('kenoBet')">2×</button><button onclick="maxBet('kenoBet')">Max</button></div>
+        <div style="margin-top:12px;font-size:.8rem;color:var(--text2);">Selected: <span id="kenoSelectedCount" style="color:var(--accent2)">0</span>/10 numbers</div>
+        <button class="play-btn green" id="kenoPlayBtn" onclick="playKeno()">PLAY KENO</button>
+        <button class="play-btn" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border);margin-top:8px;" onclick="clearKeno()">CLEAR</button>
+        <div style="margin-top:14px;">
+          <div class="kpt-title">Payout Table (for 5 picks)</div>
+          <div class="kpt-row"><span class="kpt-match">0 hits</span><span class="kpt-multi">0×</span></div>
+          <div class="kpt-row"><span class="kpt-match">1 hit</span><span class="kpt-multi">0×</span></div>
+          <div class="kpt-row"><span class="kpt-match">2 hits</span><span class="kpt-multi">0.5×</span></div>
+          <div class="kpt-row"><span class="kpt-match">3 hits</span><span class="kpt-multi">2×</span></div>
+          <div class="kpt-row"><span class="kpt-match">4 hits</span><span class="kpt-multi">8×</span></div>
+          <div class="kpt-row"><span class="kpt-match">5 hits</span><span class="kpt-multi">50×</span></div>
+        </div>
+      </div>
+      <div class="game-area">
+        <div class="keno-info">
+          <span>Pick up to 10 numbers (1–40)</span>
+          <span>Hits: <b id="kenoHits">—</b></span>
+        </div>
+        <div class="keno-grid" id="kenoGrid"></div>
+        <div class="keno-result-bar" id="kenoResultBar">Select your numbers and press Play!</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// AUDIO ENGINE — Web Audio API (no external files)
+// ═══════════════════════════════════════════════
+const AC = new (window.AudioContext || window.webkitAudioContext)();
+
+function resumeAC() { if(AC.state==='suspended') AC.resume(); }
+
+function playTone(freq, type, duration, vol, delay=0) {
+  resumeAC();
+  const o = AC.createOscillator();
+  const g = AC.createGain();
+  o.connect(g); g.connect(AC.destination);
+  o.type = type; o.frequency.value = freq;
+  const t = AC.currentTime + delay;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol, t+0.01);
+  g.gain.exponentialRampToValueAtTime(0.001, t+duration);
+  o.start(t); o.stop(t+duration+0.05);
+}
+
+function soundWin() {
+  // Ascending triumphant chord
+  playTone(523, 'sine', 0.18, 0.3, 0);
+  playTone(659, 'sine', 0.18, 0.3, 0.08);
+  playTone(784, 'sine', 0.25, 0.35, 0.16);
+  playTone(1047,'sine', 0.4,  0.4,  0.28);
+  // Sparkle on top
+  playTone(2093,'triangle',0.15,0.2,0.28);
+}
+
+function soundBigWin() {
+  [0,0.07,0.14,0.21,0.28,0.35].forEach((d,i)=>{
+    const freqs=[523,659,784,880,1047,1319];
+    playTone(freqs[i],'sine',0.35,0.35,d);
+  });
+  playTone(2093,'triangle',0.5,0.3,0.5);
+}
+
+function soundLose() {
+  // Descending sad tones
+  playTone(400,'sawtooth',0.12,0.25,0);
+  playTone(300,'sawtooth',0.18,0.25,0.12);
+  playTone(200,'sawtooth',0.25,0.2, 0.28);
+}
+
+function soundClick() {
+  playTone(880,'square',0.06,0.15,0);
+}
+
+function soundCoin() {
+  // Coin spin sound
+  playTone(1200,'sine',0.05,0.2,0);
+  playTone(1400,'sine',0.05,0.2,0.05);
+  playTone(1200,'sine',0.05,0.2,0.10);
+  playTone(1600,'sine',0.1, 0.25,0.3);
+}
+
+function soundTick() {
+  playTone(660,'square',0.04,0.08,0);
+}
+
+function soundExplosion() {
+  resumeAC();
+  const buf = AC.createBuffer(1, AC.sampleRate*0.4, AC.sampleRate);
+  const d = buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
+  const s = AC.createBufferSource();
+  const g = AC.createGain();
+  const f = AC.createBiquadFilter();
+  f.type='lowpass'; f.frequency.value=400;
+  s.buffer=buf; s.connect(f); f.connect(g); g.connect(AC.destination);
+  g.gain.setValueAtTime(0.6,AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+0.5);
+  s.start(); s.stop(AC.currentTime+0.5);
+}
+
+function soundKeno(delay) {
+  playTone(880,'sine',0.1,0.2,delay);
+  playTone(1100,'sine',0.08,0.15,delay+0.05);
+}
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let balance = 10000;
+let stats = {wagered:0,won:0,lost:0};
+let lobbyBets = [];
+const houseEdge = 0.99;
+
+function updateBalance(delta) {
+  balance = Math.max(0, balance+delta);
+  const fmt = `$${balance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+  document.getElementById('sidebarBal').textContent = fmt;
+  document.getElementById('topBal').textContent = fmt;
+  document.getElementById('heroBalance').textContent = fmt;
+}
+
+function recordStat(bet, profit) {
+  stats.wagered += bet;
+  if(profit>=0) stats.won += profit; else stats.lost += Math.abs(profit);
+  document.getElementById('statWagered').textContent = `$${stats.wagered.toFixed(2)}`;
+  document.getElementById('statWon').textContent = `$${stats.won.toFixed(2)}`;
+  document.getElementById('statLost').textContent = `$${stats.lost.toFixed(2)}`;
+  const pnl = stats.won - stats.lost;
+  const el = document.getElementById('statPnl');
+  el.textContent = `${pnl>=0?'+':'-'}$${Math.abs(pnl).toFixed(2)}`;
+  el.className = 'stat-val '+(pnl>=0?'green':'red');
+}
+
+function refillBalance() {
+  balance = 10000;
+  updateBalance(0);
+  soundBigWin();
+  showToast('info','💰 Balance refilled to $10,000!');
+}
+
+function getCrashPoint(f) {
+  if(f<=0) return 1;
+  return Math.max(Math.floor((1/f)*houseEdge*100)/100, 1);
+}
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+const pageTitles = {lobby:'Lobby',limbo:'Limbo',crash:'Crash',dice:'Dice',mines:'Mines',coinflip:'Coin Flip',keno:'Keno'};
+
+function showPage(id) {
+  soundClick();
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.textContent.trim().toLowerCase().replace(' ','').includes(id.replace(' ',''))) n.classList.add('active');
+  });
+  document.getElementById('topbarTitle').textContent = pageTitles[id]||id;
+  if(id==='crash' && !crashRunning) initCrashCanvas();
+  if(id==='mines' && !minesActive) buildMinesGrid();
+  if(id==='keno') buildKenoGrid();
+  if(id==='lobby') populateLobbyBets();
+}
+
+// ═══════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════
+function showToast(type, msg) {
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(()=>t.remove(), 3100);
+}
+
+// ═══════════════════════════════════════════════
+// BET HELPERS
+// ═══════════════════════════════════════════════
+function halfBet(id) { const e=document.getElementById(id); e.value=Math.max(1,Math.floor(+e.value/2)); updateInfoIfNeeded(id); }
+function doubleBet(id) { const e=document.getElementById(id); e.value=Math.min(balance,Math.floor(+e.value*2)); updateInfoIfNeeded(id); }
+function maxBet(id) { document.getElementById(id).value=Math.floor(balance); updateInfoIfNeeded(id); }
+function updateInfoIfNeeded(id) {
+  if(id==='limboBet') updateLimboInfo();
+  if(id==='diceBet') updateDiceInfo();
+  if(id==='coinBet') updateCoinInfo();
+}
+
+// ═══════════════════════════════════════════════
+// LIMBO
+// ═══════════════════════════════════════════════
+function updateLimboInfo() {
+  const target = parseFloat(document.getElementById('limboTarget').value)||2;
+  const chance = (houseEdge/target*100).toFixed(2);
+  const bet = parseFloat(document.getElementById('limboBet').value)||10;
+  document.getElementById('limboChance').textContent = chance+'%';
+  document.getElementById('limboPayout').textContent = '$'+(bet*target*houseEdge).toFixed(2);
+  document.getElementById('limboTargetLabel').textContent = `Target: ${target.toFixed(2)}×`;
+}
+document.getElementById('limboTarget').addEventListener('input',updateLimboInfo);
+document.getElementById('limboBet').addEventListener('input',updateLimboInfo);
+updateLimboInfo();
+
+let limboRunning = false;
+function playLimbo() {
+  if(limboRunning) return;
+  const bet = parseFloat(document.getElementById('limboBet').value)||10;
+  if(bet>balance){showToast('lose','❌ Insufficient balance');return;}
+  const target = parseFloat(document.getElementById('limboTarget').value)||2;
+  limboRunning = true;
+  updateBalance(-bet);
+  document.getElementById('limboBtn').disabled = true;
+  const result = getCrashPoint(Math.random());
+  const fill = document.getElementById('limboFill');
+  const display = document.getElementById('limboResult');
+  fill.style.width = '0%';
+  display.className = 'result-display neutral';
+  display.textContent = '…';
+  let progress = 0;
+  const targetFillPct = Math.min((result/100)*100,100);
+  const iv = setInterval(()=>{
+    progress = Math.min(progress+3, targetFillPct);
+    fill.style.width = progress+'%';
+    soundTick();
+    if(progress>=targetFillPct) {
+      clearInterval(iv);
+      const won = result >= target;
+      const profit = won ? bet*target*houseEdge - bet : 0;
+      display.textContent = result.toFixed(2)+'×';
+      display.className = 'result-display '+(won?'win':'lose');
+      if(won){ updateBalance(bet+profit); recordStat(bet,profit); soundWin(); showToast('win',`🚀 ${result.toFixed(2)}× — Won $${profit.toFixed(2)}!`); }
+      else { recordStat(bet,-bet); soundLose(); showToast('lose',`💥 ${result.toFixed(2)}× — Lost $${bet.toFixed(2)}`); }
+      addChipHistory('limboHistory', result.toFixed(2)+'×', won);
+      addLobbyBet('Limbo', bet, result.toFixed(2)+'×', won?profit:-bet);
+      limboRunning = false;
+      document.getElementById('limboBtn').disabled = false;
+    }
+  },30);
+}
+
+// ═══════════════════════════════════════════════
+// CRASH
+// ═══════════════════════════════════════════════
+let crashCanvas, crashCtx, crashRunning=false, crashPhase='waiting';
+let crashMulti=1, crashPoints=[], crashBetPlaced=false, crashBet=0;
+let crashCashedOut=false, crashBombAt=1, crashCountdown=0, crashTick_t=0;
+
+function initCrashCanvas() {
+  crashCanvas = document.getElementById('crashCanvas');
+  crashCtx = crashCanvas.getContext('2d');
+  resizeCrash();
+  if(!crashRunning) startCrashRound();
+}
+function resizeCrash() {
+  const w = crashCanvas.parentElement;
+  crashCanvas.width=w.offsetWidth; crashCanvas.height=w.offsetHeight;
+}
+function startCrashRound() {
+  crashRunning=true; crashPhase='countdown'; crashMulti=1; crashTick_t=0;
+  crashPoints=[[0,crashCanvas.height*0.85]];
+  crashBombAt=getCrashPoint(Math.random());
+  crashCashedOut=false;
+  document.getElementById('crashStatus').textContent='Starting in 5s…';
+  document.getElementById('crashMultiplier').className='crash-multiplier';
+  document.getElementById('crashMultiplier').textContent='1.00×';
+  crashCountdown=50;
+  if(crashBetPlaced){document.getElementById('crashBetBtn').style.display='none';document.getElementById('crashCashBtn').style.display='block';}
+  requestAnimationFrame(crashLoop);
+}
+function crashLoop() {
+  if(!document.getElementById('page-crash').classList.contains('active')){requestAnimationFrame(crashLoop);return;}
+  crashTick_t++;
+  const ctx=crashCtx, W=crashCanvas.width, H=crashCanvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#0d1320'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(255,255,255,.04)'; ctx.lineWidth=1;
+  for(let i=1;i<=5;i++){ctx.beginPath();ctx.moveTo(0,H/5*i);ctx.lineTo(W,H/5*i);ctx.stroke();ctx.beginPath();ctx.moveTo(W/5*i,0);ctx.lineTo(W/5*i,H);ctx.stroke();}
+
+  if(crashPhase==='countdown'){
+    crashCountdown--;
+    const s=Math.ceil(crashCountdown/10);
+    document.getElementById('crashStatus').textContent=s>0?`Starting in ${s}s…`:'Starting…';
+    if(crashCountdown<=0){crashPhase='flying';crashTick_t=0;}
+  }
+  if(crashPhase==='flying'){
+    const t=crashTick_t*0.015;
+    crashMulti=Math.pow(Math.E,t*0.75);
+    document.getElementById('crashMultiplier').textContent=crashMulti.toFixed(2)+'×';
+    document.getElementById('crashStatus').textContent='🚀 FLYING';
+    const autoCO=parseFloat(document.getElementById('crashAuto').value)||0;
+    if(crashBetPlaced&&!crashCashedOut&&autoCO>1&&crashMulti>=autoCO) cashOutCrash();
+    const prog=Math.min(crashTick_t/400,1);
+    const x=prog*W*0.9, y=H*0.85-Math.pow(prog,1.4)*H*0.75;
+    crashPoints.push([x,y]);
+    if(crashPoints.length>1){
+      ctx.beginPath(); ctx.moveTo(crashPoints[0][0],crashPoints[0][1]);
+      for(let i=1;i<crashPoints.length;i++) ctx.lineTo(crashPoints[i][0],crashPoints[i][1]);
+      ctx.strokeStyle='#00e5a0'; ctx.lineWidth=3; ctx.shadowColor='#00e5a0'; ctx.shadowBlur=12; ctx.stroke(); ctx.shadowBlur=0;
+      ctx.lineTo(x,H*0.85); ctx.lineTo(0,H*0.85); ctx.closePath(); ctx.fillStyle='rgba(0,229,160,.06)'; ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fillStyle='#00e5a0'; ctx.shadowColor='#00e5a0'; ctx.shadowBlur=20; ctx.fill(); ctx.shadowBlur=0;
+    if(crashMulti>=crashBombAt){
+      crashPhase='crashed';
+      document.getElementById('crashMultiplier').className='crash-multiplier crashed';
+      document.getElementById('crashStatus').textContent=`💥 CRASHED at ${crashBombAt.toFixed(2)}×`;
+      soundExplosion();
+      if(crashBetPlaced&&!crashCashedOut){
+        recordStat(crashBet,-crashBet); soundLose();
+        showToast('lose',`💥 Crashed at ${crashBombAt.toFixed(2)}× — Lost $${crashBet.toFixed(2)}`);
+        document.getElementById('crashBetInfo').textContent=`Lost $${crashBet.toFixed(2)}`;
+      }
+      addChipHistory('crashHistory',crashBombAt.toFixed(2)+'×',crashBombAt>=2);
+      addLobbyBet('Crash',crashBet,crashBombAt.toFixed(2)+'×',-crashBet);
+      crashBetPlaced=false;
+      document.getElementById('crashCashBtn').style.display='none';
+      document.getElementById('crashBetBtn').style.display='block';
+      setTimeout(()=>{crashMulti=1;crashTick_t=0;startCrashRound();},4000);
+    }
+  }
+  if(crashPhase==='crashed'){
+    if(crashPoints.length>1){ctx.beginPath();ctx.moveTo(crashPoints[0][0],crashPoints[0][1]);for(let i=1;i<crashPoints.length;i++)ctx.lineTo(crashPoints[i][0],crashPoints[i][1]);ctx.strokeStyle='#ff3d5a';ctx.lineWidth=3;ctx.stroke();}
+  }
+  requestAnimationFrame(crashLoop);
+}
+function placeCrashBet(){
+  const bet=parseFloat(document.getElementById('crashBet').value)||10;
+  if(bet>balance){showToast('lose','❌ Insufficient balance');return;}
+  updateBalance(-bet); crashBet=bet; crashBetPlaced=true; crashCashedOut=false;
+  document.getElementById('crashBetInfo').textContent=`Bet placed: $${bet.toFixed(2)}`;
+  if(crashPhase==='flying'){document.getElementById('crashBetBtn').style.display='none';document.getElementById('crashCashBtn').style.display='block';}
+  soundClick(); showToast('info',`🎯 Bet of $${bet.toFixed(2)} placed!`);
+}
+function cashOutCrash(){
+  if(!crashBetPlaced||crashCashedOut) return;
+  crashCashedOut=true;
+  const profit=crashBet*crashMulti-crashBet;
+  updateBalance(crashBet+profit); recordStat(crashBet,profit);
+  soundWin(); showToast('win',`💰 Cashed out at ${crashMulti.toFixed(2)}× — +$${profit.toFixed(2)}!`);
+  document.getElementById('crashBetInfo').textContent=`Cashed out ${crashMulti.toFixed(2)}× — Won $${profit.toFixed(2)}!`;
+  addLobbyBet('Crash',crashBet,crashMulti.toFixed(2)+'×',profit);
+  crashBetPlaced=false;
+  document.getElementById('crashCashBtn').style.display='none';
+  document.getElementById('crashBetBtn').style.display='block';
+}
+
+// ═══════════════════════════════════════════════
+// DICE
+// ═══════════════════════════════════════════════
+let diceMode='over';
+function setDiceMode(m){diceMode=m;document.getElementById('diceOverTab').className='mode-tab'+(m==='over'?' active':'');document.getElementById('diceUnderTab').className='mode-tab'+(m==='under'?' active':'');updateDiceInfo();}
+function updateDiceSlider(){
+  const sl=document.getElementById('diceSlider'), val=+sl.value;
+  sl.style.setProperty('--val',((val-1)/98*100).toFixed(1)+'%');
+  document.getElementById('diceTarget').value=val; updateDiceInfo();
+}
+document.getElementById('diceTarget').addEventListener('input',function(){document.getElementById('diceSlider').value=this.value;updateDiceSlider();});
+function updateDiceInfo(){
+  const target=parseFloat(document.getElementById('diceTarget').value)||50;
+  const bet=parseFloat(document.getElementById('diceBet').value)||10;
+  let chance,multi;
+  if(diceMode==='over'){chance=((100-target)/100*houseEdge*100).toFixed(2);multi=(100/(100-target)*houseEdge).toFixed(4);}
+  else{chance=((target-1)/100*houseEdge*100).toFixed(2);multi=(100/(target-1)*houseEdge).toFixed(4);}
+  document.getElementById('diceChance').textContent=chance+'%';
+  document.getElementById('dicePayout').textContent='$'+(bet*parseFloat(multi)-bet).toFixed(2);
+  document.getElementById('diceStatChance').textContent=chance+'%';
+  document.getElementById('diceStatTarget').textContent=target;
+  document.getElementById('diceStatMulti').textContent=parseFloat(multi).toFixed(2)+'×';
+}
+updateDiceInfo();
+function playDice(){
+  const bet=parseFloat(document.getElementById('diceBet').value)||10;
+  if(bet>balance){showToast('lose','❌ Insufficient balance');return;}
+  const target=parseFloat(document.getElementById('diceTarget').value)||50;
+  updateBalance(-bet);
+  const roll=Math.floor(Math.random()*100)+1;
+  const won=diceMode==='over'?roll>target:roll<target;
+  let multi=diceMode==='over'?100/(100-target)*houseEdge:100/(target-1)*houseEdge;
+  const profit=won?bet*multi-bet:0;
+  const el=document.getElementById('diceResult');
+  el.textContent=roll; el.style.color=won?'var(--accent)':'var(--danger)';
+  document.getElementById('diceSlider').value=roll;
+  document.getElementById('diceSlider').style.setProperty('--val',((roll-1)/98*100).toFixed(1)+'%');
+  if(won){updateBalance(bet+profit);recordStat(bet,profit);soundWin();showToast('win',`🎲 Rolled ${roll}! Won $${profit.toFixed(2)}`);}
+  else{recordStat(bet,-bet);soundLose();showToast('lose',`🎲 Rolled ${roll} — Lost $${bet.toFixed(2)}`);}
+  addChipHistory('diceHistory',roll.toString(),won);
+  addLobbyBet('Dice',bet,roll.toString(),won?profit:-bet);
+}
+
+// ═══════════════════════════════════════════════
+// MINES
+// ═══════════════════════════════════════════════
+let minesActive=false, minesBombs=new Set(), minesRevealed=new Set(), minesGemsFound=0, minesCurrentBet=0;
+const minesMultipliers={1:[1.03,1.06,1.09,1.12,1.16,1.20,1.25,1.30,1.36,1.43,1.51,1.60,1.71,1.84,2.00,2.20,2.44,2.75,3.14,3.67,4.40,5.50,7.33],3:[1.09,1.20,1.33,1.49,1.68,1.92,2.22,2.60,3.10,3.77,4.66,5.90,7.67,10.3,14.3,20.8,32.0,52.5,92.4,178,392,1154],5:[1.15,1.35,1.61,1.94,2.38,2.96,3.74,4.82,6.32,8.44,11.5,16.2,23.4,35.1,54.9,90.4,158,298,622,1481]};
+
+function buildMinesGrid(){
+  const grid=document.getElementById('minesGrid'); grid.innerHTML='';
+  for(let i=0;i<25;i++){const c=document.createElement('div');c.className='mine-cell';c.innerHTML='?';c.dataset.idx=i;c.onclick=()=>clickMineCell(i);grid.appendChild(c);}
+}
+function startMines(){
+  const bet=parseFloat(document.getElementById('minesBet').value)||10;
+  if(bet>balance){showToast('lose','❌ Insufficient balance');return;}
+  const mNum=parseInt(document.getElementById('minesCount').value)||5;
+  if(mNum<1||mNum>24){showToast('lose','❌ Mines must be 1–24');return;}
+  updateBalance(-bet); minesCurrentBet=bet; minesActive=true; minesBombs=new Set(); minesRevealed=new Set(); minesGemsFound=0;
+  while(minesBombs.size<mNum) minesBombs.add(Math.floor(Math.random()*25));
+  buildMinesGrid();
+  document.getElementById('minesStartBtn').style.display='none';
+  document.getElementById('minesCashBtn').style.display='block';
+  document.getElementById('minesCurrentMulti').textContent='1.00×';
+  document.getElementById('minesGems').textContent='0';
+  document.getElementById('minesResultMsg').textContent='Find the gems! Avoid the 💣';
+  soundClick();
+}
+function clickMineCell(idx){
+  if(!minesActive||minesRevealed.has(idx)) return;
+  minesRevealed.add(idx);
+  const cells=document.querySelectorAll('.mine-cell'), cell=cells[idx];
+  cell.classList.add('revealed');
+  if(minesBombs.has(idx)){
+    cell.innerHTML='💣'; cell.classList.add('bomb'); minesActive=false;
+    minesBombs.forEach(bi=>{cells[bi].innerHTML='💣';cells[bi].classList.add('bomb','revealed');});
+    recordStat(minesCurrentBet,-minesCurrentBet);
+    soundExplosion(); soundLose();
+    showToast('lose',`💥 Hit a bomb! Lost $${minesCurrentBet.toFixed(2)}`);
+    addLobbyBet('Mines',minesCurrentBet,'💣',-minesCurrentBet);
+    document.getElementById('minesResultMsg').textContent=`💥 Boom! Lost $${minesCurrentBet.toFixed(2)}`;
+    document.getElementById('minesStartBtn').style.display='block';
+    document.getElementById('minesCashBtn').style.display='none';
+  } else {
+    cell.innerHTML='💎'; cell.classList.add('gem'); minesGemsFound++;
+    document.getElementById('minesGems').textContent=minesGemsFound;
+    const mNum=parseInt(document.getElementById('minesCount').value)||5;
+    const key=mNum>=5?5:mNum>=3?3:1;
+    const mults=minesMultipliers[key]||minesMultipliers[5];
+    const multi=mults[Math.min(minesGemsFound-1,mults.length-1)]||1;
+    document.getElementById('minesCurrentMulti').textContent=multi.toFixed(2)+'×';
+    document.getElementById('minesResultMsg').textContent=`💎 ${minesGemsFound} gem${minesGemsFound>1?'s':''} found — ${multi.toFixed(2)}×`;
+    soundWin();
+  }
+}
+function cashOutMines(){
+  if(!minesActive) return;
+  const mNum=parseInt(document.getElementById('minesCount').value)||5;
+  const key=mNum>=5?5:mNum>=3?3:1;
+  const mults=minesMultipliers[key]||minesMultipliers[5];
+  const multi=mults[Math.min(minesGemsFound-1,mults.length-1)]||1;
+  const profit=minesCurrentBet*multi-minesCurrentBet;
+  updateBalance(minesCurrentBet+profit); recordStat(minesCurrentBet,profit); minesActive=false;
+  soundBigWin(); showToast('win',`💰 Cashed out ${multi.toFixed(2)}× — +$${profit.toFixed(2)}!`);
+  addLobbyBet('Mines',minesCurrentBet,multi.toFixed(2)+'×',profit);
+  document.getElementById('minesResultMsg').textContent=`✅ Cashed out $${(minesCurrentBet+profit).toFixed(2)}!`;
+  document.getElementById('minesStartBtn').style.display='block';
+  document.getElementById('minesCashBtn').style.display='none';
+  const cells=document.querySelectorAll('.mine-cell');
+  minesBombs.forEach(bi=>{if(!minesRevealed.has(bi)){cells[bi].innerHTML='💣';cells[bi].classList.add('bomb','revealed');}});
+}
+
+// ═══════════════════════════════════════════════
+// COIN FLIP
+// ═══════════════════════════════════════════════
+let coinChoice='heads', coinFlipping=false;
+
+function selectCoin(side){
+  coinChoice=side;
+  document.getElementById('coinHeadsBtn').className='coin-btn'+(side==='heads'?' selected':'');
+  document.getElementById('coinTailsBtn').className='coin-btn'+(side==='tails'?' selected':'');
+  soundClick();
+}
+function updateCoinInfo(){
+  const bet=parseFloat(document.getElementById('coinBet').value)||10;
+  document.getElementById('coinPayout').textContent='$'+(bet*2*houseEdge-bet).toFixed(2);
+}
+document.getElementById('coinBet').addEventListener('input',updateCoinInfo);
+updateCoinInfo();
+
+function playCoinFlip(){
+  if(coinFlipping) return;
+  const bet=parseFloat(document.getElementById('coinBet').value)||10;
+  if(bet>balance){showToast('lose','❌ Insufficient balance');return;}
+  updateBalance(-bet);
+  coinFlipping=true;
+  document.getElementById('coinBtn').disabled=true;
+  document.getElementById('coinResultLabel').textContent='Flipping…';
+  document.getElementById('coinResultLabel').className='coin-result-label';
+
+  const result=Math.random()<0.5?'heads':'tails';
+  const coin=document.getElementById('coinEl');
+
+  // Reset first
+  coin.style.transition='none';
+  coin.style.transform='rotateY(0deg)';
+  void coin.offsetWidth;
+  coin.style.transition='transform 1.2s cubic-bezier(.4,0,.2,1)';
+
+  soundCoin();
+  if(result==='heads') coin.style.transform='rotateY(1800deg)';
+  else coin.style.transform='rotateY(1980deg)';
+
+  setTimeout(()=>{
+    const won=result===coinChoice;
+    const profit=won?bet*2*houseEdge-bet:0;
+    const rlabel=document.getElementById('coinResultLabel');
+    if(won){
+      updateBalance(bet+profit); recordStat(bet,profit);
+      soundWin();
+      rlabel.textContent=`${result.toUpperCase()}! 🎉 You picked ${coinChoice} — Won $${profit.toFixed(2)}!`;
+      rlabel.className='coin-result-label win';
+      showToast('win',`🪙 ${result} — Won $${profit.toFixed(2)}!`);
+    } else {
+      recordStat(bet,-bet); soundLose();
+      rlabel.textContent=`${result.toUpperCase()}! 😢 You picked ${coinChoice} — Lost $${bet.toFixed(2)}`;
+      rlabel.className='coin-result-label lose';
+      showToast('lose',`🪙 ${result} — Lost $${bet.toFixed(2)}`);
+    }
+    addChipHistory('coinHistory',result==='heads'?'H':'T',won);
+    addLobbyBet('Coin Flip',bet,result,won?profit:-bet);
+    coinFlipping=false;
+    document.getElementById('coinBtn').disabled=false;
+  },1300);
+}
+
+// ═══════════════════════════════════════════════
+// KENO
+// ═══════════════════════════════════════════════
+let kenoSelected=new Set(), kenoPlaying=false;
+
+// Payout table based on number of picks and hits
+const kenoPayout={
+  1:{1:2.97},
+  2:{2:5.5,1:0},
+  3:{3:25,2:3,1:0},
+  4:{4:60,3:6,2:1.5,1:0},
+  5:{5:50,4:8,3:2,2:0.5,1:0},
+  6:{6:200,5:15,4:4,3:1,2:0,1:0},
+  7:{7:500,6:50,5:10,4:2.5,3:0.5,2:0,1:0},
+  8:{8:1000,7:100,6:20,5:5,4:1.5,3:0.3,2:0,1:0},
+  9:{9:2500,8:200,7:40,6:8,5:2,4:0.5,3:0.1,2:0,1:0},
+  10:{10:5000,9:500,8:80,7:15,6:4,5:1,4:0.2,3:0,2:0,1:0}
+};
+
+function buildKenoGrid(){
+  const grid=document.getElementById('kenoGrid');
+  if(grid.children.length===40) return;
+  grid.innerHTML='';
+  for(let i=1;i<=40;i++){
+    const d=document.createElement('div');
+    d.className='keno-num'; d.textContent=i; d.dataset.n=i;
+    d.onclick=()=>toggleKeno(i);
+    grid.appendChild(d);
+  }
+}
+function toggleKeno(n){
+  if(kenoPlaying) return;
+  if(kenoSelected.has(n)){kenoSelected.delete(n);}
+  else{if(kenoSelected.size>=10){showToast('info','Max 10 numbers!');return;}kenoSelected.add(n);}
+  document.querySelector(`.keno-num[data-n="${n}"]`).classList.toggle('selected',kenoSelected.has(n));
+  document.getElementById('kenoSelectedCount').textContent=kenoSelected.size;
+  soundTick();
+}
+function clearKeno(){
+  kenoSelected.clear();
+  document.querySelectorAll('.keno-num').forEach(e=>{e.className='keno-num';});
+  document.getElementById('kenoSelectedCount').textContent='0';
+  document.getElementById('kenoHits').textContent='—';
+  document.getElementById('kenoResultBar').textContent='Select your numbers and press Play!';
+  document.getElementById('kenoResultBar').style.color='';
+}
+function playKeno(){
+  if(kenoPlaying) return;
+  if(kenoSelected.size<1){showToast('info','Pick at least 1 number!');return;}
+  const bet=parseFloat(document.getElementById('kenoBet').value)||10;
+  if(bet>balance){showToast('lose','❌ Insufficient balance');return;}
+  updateBalance(-bet);
+  kenoPlaying=true;
+  document.getElementById('kenoPlayBtn').disabled=true;
+
+  // Reset colors
+  document.querySelectorAll('.keno-num').forEach(e=>{
+    const n=parseInt(e.dataset.n);
+    e.className='keno-num'+(kenoSelected.has(n)?' selected':'');
+  });
+  document.getElementById('kenoHits').textContent='…';
+  document.getElementById('kenoResultBar').textContent='Drawing numbers…';
+
+  // Draw 20 random numbers 1-40
+  const pool=Array.from({length:40},(_,i)=>i+1);
+  const drawn=new Set();
+  while(drawn.size<20) drawn.add(pool[Math.floor(Math.random()*pool.length)]);
+
+  const drawnArr=[...drawn];
+  let hits=0; kenoSelected.forEach(n=>{if(drawn.has(n))hits++;});
+
+  // Animate draws
+  let di=0;
+  const iv=setInterval(()=>{
+    if(di>=drawnArr.length){clearInterval(iv);kenoFinish(bet,hits,drawn);return;}
+    const n=drawnArr[di];
+    const cell=document.querySelector(`.keno-num[data-n="${n}"]`);
+    if(kenoSelected.has(n)){cell.className='keno-num hit';soundKeno(0);}
+    else{cell.className='keno-num drawn-only';}
+    di++;
+  },80);
+}
+function kenoFinish(bet, hits, drawn){
+  const picks=kenoSelected.size;
+  const table=kenoPayout[picks]||{};
+  const multi=table[hits]||0;
+  const profit=bet*multi-bet;
+
+  document.getElementById('kenoHits').textContent=hits;
+  const bar=document.getElementById('kenoResultBar');
+  if(multi>0){
+    updateBalance(bet+profit); recordStat(bet,profit);
+    soundBigWin();
+    bar.textContent=`🎉 ${hits}/${picks} hits! ${multi}× multiplier — Won $${profit.toFixed(2)}!`;
+    bar.style.color='var(--accent)';
+    showToast('win',`🎱 ${hits} hits — Won $${profit.toFixed(2)}!`);
+    addLobbyBet('Keno',bet,multi+'×',profit);
+  } else {
+    recordStat(bet,-bet); soundLose();
+    bar.textContent=`💀 ${hits}/${picks} hits — Not enough. Lost $${bet.toFixed(2)}`;
+    bar.style.color='var(--danger)';
+    showToast('lose',`🎱 ${hits} hits — Lost $${bet.toFixed(2)}`);
+    addLobbyBet('Keno',bet,'0×',-bet);
+  }
+  kenoPlaying=false;
+  document.getElementById('kenoPlayBtn').disabled=false;
+}
+
+// ═══════════════════════════════════════════════
+// LOBBY / HISTORY HELPERS
+// ═══════════════════════════════════════════════
+function addChipHistory(id, label, won){
+  const hist=document.getElementById(id);
+  const chip=document.createElement('div');
+  chip.className='hist-chip '+(won?'hist-win':'hist-lose');
+  chip.textContent=label;
+  hist.insertBefore(chip,hist.firstChild);
+  if(hist.children.length>20) hist.removeChild(hist.lastChild);
+}
+
+const botNames=['Rakesh_77','CryptoKing','LuckyLad','NightOwl','StarBet','XForce','DiamondH','SkyHigh','TurboMax','GoldRush'];
+const botColors=['#00e5a0','#00b8ff','#ff3d5a','#ffb800','#c084fc','#fb923c','#34d399','#f472b6','#60a5fa','#a3e635'];
+
+function addLobbyBet(game,bet,multi,profit){
+  lobbyBets.unshift({game,player:'You',bet,multi,profit,color:'#ffd700'});
+  if(lobbyBets.length>30) lobbyBets.pop();
+  if(document.getElementById('page-lobby').classList.contains('active')) populateLobbyBets();
+}
+function addBotBet(){
+  const games=['Limbo','Crash','Dice','Mines','Coin Flip','Keno'];
+  const game=games[Math.floor(Math.random()*games.length)];
+  const bet=(Math.random()*200+5).toFixed(2);
+  const multi=(Math.random()*4+1).toFixed(2);
+  const won=Math.random()>0.5;
+  const profit=won?(bet*multi-bet).toFixed(2):(-bet*1).toFixed(0);
+  const idx=Math.floor(Math.random()*botNames.length);
+  lobbyBets.unshift({game,player:botNames[idx],bet,multi:multi+'×',profit:parseFloat(profit),color:botColors[idx]});
+  if(lobbyBets.length>30) lobbyBets.pop();
+  if(document.getElementById('page-lobby').classList.contains('active')) populateLobbyBets();
+}
+setInterval(addBotBet,2500);
+
+function populateLobbyBets(){
+  const tbody=document.getElementById('lobbyBets'); tbody.innerHTML='';
+  lobbyBets.slice(0,15).forEach(b=>{
+    const tr=document.createElement('tr');
+    const pnl=b.profit>=0?`+$${b.profit.toFixed(2)}`:`-$${Math.abs(b.profit).toFixed(2)}`;
+    tr.innerHTML=`<td>${b.game}</td><td><div class="lt-user"><div class="lt-avatar" style="background:${b.color}">${b.player[0]}</div><span>${b.player}</span></div></td><td>$${parseFloat(b.bet).toFixed(2)}</td><td class="lt-multi">${b.multi}</td><td class="${b.profit>=0?'lt-win':'lt-lose'}">${pnl}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+window.addEventListener('resize',()=>{if(crashCanvas)resizeCrash();});
+for(let i=0;i<8;i++) setTimeout(addBotBet,i*200);
+updateBalance(0);
+buildKenoGrid();
+buildMinesGrid();
+</script>
+</body>
+</html>
